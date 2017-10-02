@@ -1,6 +1,5 @@
 const LOOP_PATTERN = /\.*?{# for ([^\s]+) in ([^\s]+) #\}(.*)\{# end #\}/;
 const DATA_PATTERN = /\{% ([^\s]+) %\}/g;
-const REPLACE_PATTERN = /\{[#%].*?[#%]\}/g;
 
 /**
  * Checks whether a value is an object or not.
@@ -22,10 +21,14 @@ const getValueFromObject = (path, obj) => {
     }
 
     const splitPath = path.split('.');
-    const nextPath = splitPath.slice(1);
+    const nextPath = splitPath.slice(1).join('.');
 
-    const firstKey = splitPath.slice(0, 1);
+    const firstKey = splitPath[0];
     const nextObject = obj[firstKey];
+
+    if (splitPath.length === 1) {
+        return obj[firstKey];
+    }
 
     return getValueFromObject(nextPath, nextObject);
 };
@@ -63,7 +66,7 @@ const processLoop = (template, dataPrefix, data) => {
     const [match, loopKey, dataKeyRaw, loopTemplate] = loopMatch;
     const dataKey = dataKeyRaw.replace(dataPrefix, '');
 
-    const loopData = data[dataKey];
+    const loopData = getValueFromObject(dataKey, data);
 
     let processedLoop = '';
     if (Array.isArray(loopData)) {
